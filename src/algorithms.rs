@@ -1,231 +1,63 @@
 // Solver algorithms
 
-// Min: 2
-// Average: 5
-// Max: 13
-pub fn baseline<'a>(word_list: &[&'a str]) -> &'a str {
-    word_list[0]
-}
-
-// Min: 2
-// Average: 5.8
-// Max: 14
-pub fn most_common_letters<'a>(word_list: &[&'a str]) -> &'a str {
-    let mut frequencies: HashMap<char, usize> = HashMap::new();
-
-    for word in word_list {
-        word.chars().for_each(|c| { 
-            frequencies.insert(c, *frequencies.get(&c).unwrap_or(&0) + 1);
-        })
-    }
-
-    let score = |word: &str| word.chars().map(|c| frequencies.get(&c).unwrap_or(&0)).sum::<usize>();
-
-    word_list
-        .iter()
-        .max_by(|word1, word2| score(word1).cmp(&score(word2)))
-        .unwrap_or(&word_list[0])
-}
-
-// Min: 2
-// Average: 6.3
-// Max: 13
-pub fn least_common_letters<'a>(word_list: &[&'a str]) -> &'a str {
-    let mut frequencies: HashMap<char, usize> = HashMap::new();
-
-    for word in word_list {
-        word.chars().for_each(|c| { 
-            frequencies.insert(c, *frequencies.get(&c).unwrap_or(&0) + 1);
-        })
-    }
-
-    let score = |word: &str| word.chars().map(|c| frequencies.get(&c).unwrap_or(&0)).sum::<usize>();
-
-    word_list
-        .iter()
-        .min_by(|word1, word2| score(word1).cmp(&score(word2)))
-        .unwrap_or(&word_list[0])
-}
-
-// Min: 2
-// Average: 5
-// Max: 16
-pub fn most_common_letters_by_index<'a>(word_list: &[&'a str]) -> &'a str {
-    let mut frequencies: HashMap<(usize, char), usize> = HashMap::new();
-
-    for word in word_list {
-        word.char_indices().for_each(|c| { 
-            frequencies.insert(c, *frequencies.get(&c).unwrap_or(&0) + 1);
-        })
-    }
-
-    // dbg!(&frequencies);
-
-    let score = |word: &str| word.char_indices().map(|c| frequencies.get(&c).unwrap_or(&0)).sum::<usize>();
-
-    word_list
-        .iter()
-        .max_by(|word1, word2| score(word1).cmp(&score(word2)))
-        .unwrap_or(&word_list[0])
-}
-
 // Min: 3
-// Average: 5.9
-// Max: 13
-pub fn most_common_letters_weighting_unguessed<'a>(word_list: &[&'a str], previous_guesses: &[&'a str]) -> &'a str {
-    let mut frequencies: HashMap<char, f64> = HashMap::new();
-
-    let guessed_letters = previous_guesses.iter().flat_map(|word| word.chars()).collect::<Vec<char>>();
-
-    for word in word_list {
-        word.chars().for_each(|c| { 
-            frequencies.insert(c, *frequencies.get(&c).unwrap_or(&0.0) + if guessed_letters.contains(&c) {50.0 / word_list.len() as f64} else {1.0});
-        })
-    }
-
-    let score = |word: &str| word.chars().map(|c| frequencies.get(&c).unwrap_or(&0.0)).sum::<f64>();
-
-    word_list
-        .iter()
-        .max_by(|word1, word2| score(word1).partial_cmp(&score(word2)).unwrap())
-        .unwrap_or(&word_list[0])
-}
-
-// Min: 2
-// Average: 4.74
-// Max: 12
-pub fn most_common_letters_by_index_weighting_unguessed<'a>(word_list: &[&'a str], previous_guesses: &[&'a str]) -> &'a str {
-    let mut frequencies: HashMap<(usize, char), f64> = HashMap::new();
-
-    let guessed_letters = previous_guesses.iter().flat_map(|word| word.chars()).collect::<Vec<char>>();
-
-    for word in word_list {
-        word.char_indices().for_each(|c| { 
-            frequencies.insert(c, *frequencies.get(&c).unwrap_or(&0.0) + if guessed_letters.contains(&c.1) {50.0 / word_list.len() as f64} else {1.0});
-        })
-    }
-
-    let score = |word: &str| word.char_indices().map(|c| frequencies.get(&c).unwrap_or(&0.0)).sum::<f64>();
-
-    word_list
-        .iter()
-        .max_by(|word1, word2| score(word1).partial_cmp(&score(word2)).unwrap())
-        .unwrap_or(&word_list[0])
-}
-
-// Min: 2
-// Average: 4.79
-// Max: 10
-pub fn most_common_letters_by_index_weighting_unguessed_from_master_list<'a>(word_list: &[&'a str], previous_guesses: &[&'a str], master_word_list: &[&'a str]) -> &'a str {
-    let mut frequencies: HashMap<(usize, char), f64> = HashMap::new();
-
-    let guessed_letters = previous_guesses.iter().flat_map(|word| word.chars()).collect::<Vec<char>>();
-
-    for word in word_list {
-        word.char_indices().for_each(|c| { 
-            frequencies.insert(c, *frequencies.get(&c).unwrap_or(&0.0) + if guessed_letters.contains(&c.1) {50.0 / word_list.len() as f64} else {1.0});
-        })
-    }
-
-    let score = |word: &str| word.char_indices().map(|c| frequencies.get(&c).unwrap_or(&0.0)).sum::<f64>();
-
-    master_word_list
-        .iter()
-        .max_by(|word1, word2| score(word1).partial_cmp(&score(word2)).unwrap())
-        .unwrap_or(&word_list[0])
-}
-
-// Min: 2
-// Average: 4.72
-// Max: 10
-pub fn most_common_letters_by_index_weighting_unguessed_from_master_list_weighting_no_duplicates<'a>(word_list: &[&'a str], previous_guesses: &[&'a str], master_word_list: &[&'a str]) -> &'a str {
-    let mut frequencies: HashMap<(usize, char), f64> = HashMap::new();
-
-    let guessed_letters = previous_guesses.iter().flat_map(|word| word.chars()).collect::<Vec<char>>();
-
-    for word in word_list {
-        word.char_indices().for_each(|c| { 
-            frequencies.insert(c, *frequencies.get(&c).unwrap_or(&0.0) + if guessed_letters.contains(&c.1) {30.0 / word_list.len() as f64} else {1.0});
-        })
-    }
-
-    let score = |word: &str| {
-        let base_score = word.char_indices().map(|c| frequencies.get(&c).unwrap_or(&0.0)).sum::<f64>();
-        let unique_chars: HashSet<char> = HashSet::from_iter(word.chars());
-        // Weight score lower for duplicate characters
-        let unique_weight = 0.5;
-        base_score * (unique_weight + (unique_weight * (unique_chars.len() as f64 / word.len() as f64)))
-    };
-
-    master_word_list
-        .iter()
-        .max_by(|word1, word2| score(word1).partial_cmp(&score(word2)).unwrap())
-        .unwrap_or(&word_list[0])
-}
-
-// Min: 2
-// Average: 5.03
-// Max: 13
-pub fn most_common_letters_by_index_weighting_unguessed_weighting_no_duplicates<'a>(word_list: &[&'a str], previous_guesses: &[&'a str], master_word_list: &[&'a str]) -> &'a str {
-    let mut frequencies: HashMap<(usize, char), f64> = HashMap::new();
-
-    let guessed_letters = previous_guesses.iter().flat_map(|word| word.chars()).collect::<Vec<char>>();
-
-    for word in word_list {
-        word.char_indices().for_each(|c| { 
-            frequencies.insert(c, *frequencies.get(&c).unwrap_or(&0.0) + if guessed_letters.contains(&c.1) {50.0 / word_list.len() as f64} else {1.0});
-        })
-    }
-
-    let score = |word: &str| {
-        let base_score = word.char_indices().map(|c| frequencies.get(&c).unwrap_or(&0.0)).sum::<f64>();
-        let unique_chars: HashSet<char> = HashSet::from_iter(word.chars());
-        // Weight score lower for duplicate characters
-        let unique_weight = 0.5;
-        base_score * (unique_weight + (unique_weight * (unique_chars.len() as f64 / word.len() as f64)))
-    };
-
-    word_list
-        .iter()
-        .max_by(|word1, word2| score(word1).partial_cmp(&score(word2)).unwrap())
-        .unwrap_or(&word_list[0])
-}
-
-// Min: 
-// Average: 
-// Max: 
-pub fn brute_force<'a>(word_list: &[&'a str], previous_guesses: &[&'a str], master_word_list: &[&'a str]) -> &'a str {
-    // For each word in master_word_list
-        // Test the word against each word in word_list
-        // Reduce the word list as if the answer were correct. Record the length.
-        // The word's score is the total length of all reduced word lists.
-        // The best word has the lowest score.
-
+// Average: 4.2
+// Max: 5
+#[allow(dead_code)]
+pub fn brute_force_optimized(word_list: &[String], previous_guesses: &[String], master_word_list: &[String]) -> String {
+    // Short circuits
     if word_list.len() == 1 {
-        return word_list[0];
+        return word_list[0].to_string();
+    }
+    if previous_guesses.is_empty() {
+        return "serai".to_string(); // Best first guess
     }
 
-    if previous_guesses.len() == 0 {
-        return "tares";
-    }
+    // Split into threads
 
-    let mut best_answer = (word_list.len(), word_list[0]);
+    let (tx, rx) = mpsc::channel();
+    let mut threads = vec![];
 
-    for word in master_word_list {
-        let mut unique_results = HashMap::new();
-        for test_answer in word_list {
-            let result = compare_words(test_answer, word);
-            let count = unique_results.get(&result).unwrap_or(&0) + 1;
-            unique_results.insert(result, count);
-        }
-        let worst_case = unique_results.iter().max_by(|(_, score1), (_, score2)| score1.cmp(score2));
-        if let Some((_, worst_count)) = worst_case {
-            if worst_count < &best_answer.0 {
-                best_answer = (*worst_count, word);
+    const THREAD_COUNT: usize = 8;
+    let words_per_thread = master_word_list.len() / THREAD_COUNT;
+    let word_list_threads = Arc::new(Mutex::new(Vec::from(word_list)));
+
+    for i in 0..THREAD_COUNT {
+        let tx_thread = tx.clone();
+        let word_list_thread = Arc::clone(&word_list_threads);
+        let start = i * words_per_thread;
+        let end = (i + 1) * words_per_thread;
+        let word_list_slice = master_word_list[start..end].to_vec();
+        let word_list_len = word_list.len();
+
+        threads.push(thread::spawn(move || {
+            let words = word_list_thread.lock().unwrap().clone();
+            for word in word_list_slice {
+                let mut unique_results = HashMap::new();
+                for test_answer in words.iter() {
+                    let result = compare_words(test_answer, &word);
+                    let count = unique_results.get(&result).unwrap_or(&0) + 1;
+                    unique_results.insert(result, count);
+                }
+                let worst_case = *unique_results.iter().map(|(_, score)| score).max_by(|score1, score2| score1.cmp(score2)).unwrap_or(&word_list_len);
+                tx_thread.send((worst_case, word)).unwrap();
+                if worst_case == 1 {
+                    break;
+                }
             }
-        }
-        if best_answer.0 == 1 {
-            break;
+        }));
+    }
+
+    for thread in threads {
+        thread.join().unwrap()
+    }
+
+    drop(tx);
+
+    let mut best_answer = (word_list.len(), word_list[0].to_string());
+    for answer in rx {
+        if answer.0 < best_answer.0 {
+            best_answer = answer;
         }
     }
 
@@ -234,12 +66,12 @@ pub fn brute_force<'a>(word_list: &[&'a str], previous_guesses: &[&'a str], mast
 
 // Reducer algorithms
 
-use std::collections::{HashMap, HashSet};
+use std::{collections::{HashMap, HashSet}, sync::{mpsc, Arc, Mutex}, thread};
 
-pub fn reduce_word_list(word_list: &mut Vec<&str>, guess: &str, results: Vec<String>) {
+pub fn reduce_word_list(word_list: &mut Vec<String>, guess: &str, results: Vec<String>) {
     let mut i = 0;
     while i < word_list.len() {
-        if compare_words(word_list[i], guess) != results {
+        if compare_words(&word_list[i], guess) != results {
             word_list.remove(i);
         } else {
             i += 1;
