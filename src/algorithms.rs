@@ -1,16 +1,17 @@
+use std::{collections::{HashMap}, sync::{mpsc, Arc, Mutex}, thread};
+use itertools::Itertools;
+use crate::indexes::get_indexes;
+
 // Solver algorithms
 
 // Min: 3
 // Average: 4.2
 // Max: 5
 #[allow(dead_code)]
-pub fn brute_force_optimized(word_list: &[String], previous_guesses: &[String], master_word_list: &[String]) -> String {
+pub fn brute_force_optimized(word_list: &[String], master_word_list: &[String]) -> String {
     // Short circuits
     if word_list.len() == 1 {
         return word_list[0].to_string();
-    }
-    if previous_guesses.is_empty() {
-        return "serai".to_string(); // Best first guess
     }
 
     // Split into threads
@@ -64,9 +65,71 @@ pub fn brute_force_optimized(word_list: &[String], previous_guesses: &[String], 
     best_answer.1
 }
 
-// Reducer algorithms
 
-use std::{collections::{HashMap, HashSet}, sync::{mpsc, Arc, Mutex}, thread};
+
+// Min: 3
+// Average: 4.2
+// Max: 5
+#[allow(dead_code)]
+pub fn brute_force_indexed(word_list: &[String], previous_guesses: &[(String, Vec<String>)], master_word_list: &[String]) -> String {
+    let indexes = get_indexes();
+
+    // Short circuits
+    if word_list.len() == 1 {
+        return word_list[0].to_string();
+    }
+    if previous_guesses.is_empty() { // Best first guess
+        return indexes.starting_guess;
+    }
+    if previous_guesses.len() == 1 { // Best second guess, given previous result
+        let (_, previous_result) = &previous_guesses[0];
+        let key = previous_result.iter().map(|word| word.chars().next().unwrap()).collect::<String>();
+        let next_guess = indexes.indexes.get(&key).unwrap().as_ref().unwrap();
+        return next_guess.to_string();
+    }
+
+    // Otherwise, fall back to brute force implementation
+
+    brute_force_optimized(word_list, master_word_list)
+}
+
+#[allow(dead_code)]
+pub fn generate_indexes(master_word_list: &[String]) -> (String, HashMap<String, Option<String>>) {
+    // Brute-force the best possible first guess for the given word list
+    let guess = brute_force_optimized(master_word_list, master_word_list);
+    dbg!(&guess);
+    // let guess = "train";
+
+    // Generate all possible results
+    let mut indexes = HashMap::new();
+    for result_combination in vec!["CORRECT", "ALMOST", "WRONG"].iter().combinations_with_replacement(5) {
+        for result_permutation in result_combination.iter().permutations(5) {
+            let key = result_permutation.iter().map(|word| word.chars().next().unwrap()).collect::<String>();
+            if indexes.contains_key(&key) {
+                continue
+            }
+            dbg!(&key);
+
+            let mut reduced_list = Vec::from(master_word_list);
+            let results = result_permutation.iter().map(|word| word.to_string()).collect();
+            reduce_word_list(
+                &mut reduced_list, 
+                &guess, 
+                results);
+            if reduced_list.is_empty() {
+                indexes.insert(key, None);
+                continue;
+            }
+            let next_best_guess = brute_force_optimized(&reduced_list, master_word_list);
+            dbg!(&next_best_guess);
+            indexes.insert(key, Some(next_best_guess));
+        }
+    }
+
+    (guess, indexes)
+}
+
+// Reducer algorithms
 
 pub fn reduce_word_list(word_list: &mut Vec<String>, guess: &str, results: Vec<String>) {
     let mut i = 0;
