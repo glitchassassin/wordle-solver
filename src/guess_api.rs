@@ -48,6 +48,21 @@ pub fn guess(word: usize, guess: &str) -> Result<(Vec<String>, usize, bool), req
     Ok((data.result, data.word, data.win))
 }
 
+pub fn guess_today(guess: &str) -> Result<(Vec<String>, bool), reqwest::Error> {
+    let req = json!({
+        "guess": guess
+    });
+
+    let client = reqwest::blocking::Client::new();
+    let res = client.post(format!("{}/today", API_URL))
+        .json(&req)
+        .send()?;
+    
+    let data = res.json::<GuessResponse>()?;
+
+    Ok((data.result, data.win))
+}
+
 pub fn generate_test_guess() -> Result<impl Fn(&str) -> Result<(Vec<String>, usize, bool), reqwest::Error>, reqwest::Error> {
     let word = get_random_word()?;
 
